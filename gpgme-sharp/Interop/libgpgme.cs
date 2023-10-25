@@ -77,7 +77,8 @@ namespace Libgpgme.Interop
             try
             {
 
-                NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+                // TODO Does this violate only setting resolver for my own assembly? Should we move to Native.Shared
+                NativeLibrary.SetDllImportResolver(Assembly.GetAssembly(typeof(NativeMethods)), DllImportResolver);
 
                 NativeMethods = GPGME.Native.Shared.NativeMethods.CreateWrapper();
                 
