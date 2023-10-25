@@ -10,3 +10,4 @@ packages/
 _Resharper*
 gpgme-sharp.userprefs
 .vs/
+.idea/

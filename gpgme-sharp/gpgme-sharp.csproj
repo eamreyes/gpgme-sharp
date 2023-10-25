@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net40;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <AssemblyVersion>2.0.3</AssemblyVersion>
     <FileVersion>2.0.3</FileVersion>
     <AssemblyName>gpgme-sharp</AssemblyName>
@@ -24,8 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GPGME.Native.Shared\GPGME.Native.Shared.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\GPGME.Native.Unix\GPGME.Native.Unix.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\GPGME.Native.Win32\GPGME.Native.Win32.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using GPGME.Native.Shared;
 using Microsoft.Win32;
@@ -25,11 +26,7 @@ namespace Libgpgme.Interop
             Win32SetLibdir();
 
             // Version check required (could fail on Windows systems)
-            try {
-                InitLibgpgme();
-            } catch {
-            }
-            ;
+            InitLibgpgme();
         }
 
         internal static int gpgme_err_make(gpg_err_source_t source, gpg_err_code_t code) {
@@ -75,27 +72,40 @@ namespace Libgpgme.Interop
             return true; // always "true" for UNIX
         }
 
-        internal static void InitLibgpgme() {
-            // TODO: This should try Win32.NativeMethods and Unix.NativeMethods and use the one
-            // that works, rather than inferring the right one to use based on Platform string.
-            if (Environment.OSVersion.Platform.ToString().Contains("Win32") ||
-                Environment.OSVersion.Platform.ToString().Contains("Win64")) {
-                IsWindows = true;
-                NativeMethods = GPGME.Native.Win32.NativeMethods.CreateWrapper();
-            } else {
-                IsWindows = false;
-                NativeMethods = GPGME.Native.Unix.NativeMethods.CreateWrapper();
-                if (USE_LFS_ON_UNIX) {
-                    // See GPGME manual: 2.3 Largefile Support (LFS)
-                    use_lfs = true;
-                }
-            }
+        internal static void InitLibgpgme() 
+        {
+            try
+            {
 
-#if REQUIRE_GPGME_VERSION
-            gpgme_version = new GpgmeVersion(CheckVersion(REQUIRE_GPGME));
-#else
-            gpgme_version = new GpgmeVersion(CheckVersion(null));
-#endif
+                NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+
+                NativeMethods = GPGME.Native.Shared.NativeMethods.CreateWrapper();
+                
+                // TODO: This should try Win32.NativeMethods and Unix.NativeMethods and use the one
+                // that works, rather than inferring the right one to use based on Platform string.
+                IsWindows = Environment.OSVersion.Platform.ToString().Contains("Win32") ||
+                            Environment.OSVersion.Platform.ToString().Contains("Win64");
+                if (!IsWindows) {
+                    if (USE_LFS_ON_UNIX) {
+                        // See GPGME manual: 2.3 Largefile Support (LFS)
+                        use_lfs = true;
+                    }
+                }
+                
+    #if REQUIRE_GPGME_VERSION
+                gpgme_version = new GpgmeVersion(CheckVersion(REQUIRE_GPGME));
+    #else
+                gpgme_version = new GpgmeVersion(CheckVersion(null));
+    #endif
+            }
+            catch (InvalidOperationException)
+            {
+                /* This occurs when SetDllImportResolver is invoked multiple times*/
+            }
+            catch (Exception)
+            {
+                /* Matches existing invocations */
+            }
         }
 
         internal static string CheckVersion(string ReqVersion) {
@@ -127,5 +137,19 @@ namespace Libgpgme.Interop
             }
             return gpgme_version_str;
         }
+
+        private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName.Equals(GPGME.Native.Shared.NativeMethods.LIBRARY_NAME,
+                    StringComparison.InvariantCultureIgnoreCase))
+            {
+                return IsWindows 
+                    ? NativeLibrary.Load("libgpgme-11.dll", assembly, searchPath)
+                    : NativeLibrary.Load("libgpgme.so.11", assembly, searchPath);
+            }
+            
+            return IntPtr.Zero;
+        }
+        
     }
 }

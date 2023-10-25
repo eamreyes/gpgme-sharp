@@ -1,21 +1,13 @@
-﻿using Libgpgme.Interop;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using GPGME.Native.Shared;
+using Libgpgme.Interop;
 
-#if WINDOWS
-namespace GPGME.Native.Win32
-#else
-namespace GPGME.Native.Unix
-#endif
+namespace GPGME.Native.Shared
 {
 	public static class NativeMethods
 	{
-#if WINDOWS
-		private const string LIBRARY_NAME = "libgpgme-11.dll";
-#else
-		private const string LIBRARY_NAME = "libgpgme.so.11";
-#endif
+		public const string LIBRARY_NAME = "libgpgme";
 
         /* Check that the library fulfills the version requirement.  Note:
            This is here only for the case where a user takes a pointer from
