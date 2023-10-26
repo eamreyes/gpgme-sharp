@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using GPGME.Native.Shared;
 using Libgpgme.Interop;
@@ -889,6 +890,8 @@ namespace GPGME.Native.Shared
 
         public static NativeMethodsWrapper CreateWrapper()
         {
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+            
             return new NativeMethodsWrapper
             {
                 gpgme_check_version = gpgme_check_version,
@@ -971,5 +974,61 @@ namespace GPGME.Native.Shared
                 gpgme_trust_item_unref = gpgme_trust_item_unref,
             };
         }
+        
+        private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName.Equals(GPGME.Native.Shared.NativeMethods.LIBRARY_NAME,
+                    StringComparison.InvariantCultureIgnoreCase))
+            {
+                return IsWindows()
+                    ? LoadWindowsLibrary(assembly, searchPath)
+                    : NativeLibrary.Load("libgpgme.so.11", assembly, searchPath);
+            }
+            
+            return IntPtr.Zero;
+        }
+
+        private static IntPtr LoadWindowsLibrary(Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            return NativeLibrary.Load("C:\\Program Files (x86)\\GnuPG\\bin\\libgpgme-11.dll", assembly, searchPath);
+        }
+
+        private static bool IsWindows()
+        {
+            // IntPtr.Size == 4 on 32-bit systems and 8 on 64-bit systems
+             return Environment.OSVersion.Platform.ToString().Contains("Win32") ||
+                     Environment.OSVersion.Platform.ToString().Contains("Win64");           
+        }
+
+        private static bool Is32bit() => IntPtr.Size == 4;
+        
+        
+      //   internal static bool Win32SetLibdir() {
+      //       if (IsWindows()) {
+      //           string gnupgpath = null;
+      //           try {
+      //               // TODO Why can't I find this in regedit?
+      //               // TODO Should this be configurable by environment variables?
+      //               gnupgpath = (string) Registry.GetValue(
+						// "HKEY_LOCAL_MACHINE\\SOFTWARE\\GNU\\GnuPG",
+      //                   "Install Directory",
+      //                   null);
+      //           } catch {
+      //           }
+      //           if (gnupgpath != null && !(gnupgpath.Equals(string.Empty))) {
+      //               return SetDllDirectory(gnupgpath);
+      //           }
+      //           return SetDllDirectory(GNUPG_DIRECTORY);
+      //       }
+      //
+      //       return true; // always "true" for UNIX
+      //   }
+      //   
+      //   /* Windows: add GNUPG directory as library path */
+      //
+      //   [DllImport("kernel32.dll", SetLastError = true)]
+      //   internal static extern bool SetDllDirectory(string lpPathName);
+
+
     }
 }

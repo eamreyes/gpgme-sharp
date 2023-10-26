@@ -1,8 +1,6 @@
 using System;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using GPGME.Native.Shared;
-using Microsoft.Win32;
 
 namespace Libgpgme.Interop
 {
@@ -24,9 +22,6 @@ namespace Libgpgme.Interop
         internal static NativeMethodsWrapper NativeMethods { get; private set; }
 
         static libgpgme() {
-            // On Windows systems we have to add the GnuPG directory to DLL search path
-            Win32SetLibdir();
-
             // Version check required (could fail on Windows systems)
             InitLibgpgme();
         }
@@ -47,41 +42,10 @@ namespace Libgpgme.Interop
             return libgpgerror.gpg_err_source(err);
         }
 
-        /* Windows: add GNUPG directory as library path */
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool SetDllDirectory(string lpPathName);
-
-
-        internal static bool Win32SetLibdir() {
-            if (IsWindows) {
-                string gnupgpath = null;
-                try {
-                    // TODO Why can't I find this in regedit?
-                    // TODO Should this be configurable by environment variables?
-                    gnupgpath = (string) Registry.GetValue(
-						"HKEY_LOCAL_MACHINE\\SOFTWARE\\GNU\\GnuPG",
-                        "Install Directory",
-                        null);
-                } catch {
-                }
-                if (gnupgpath != null && !(gnupgpath.Equals(string.Empty))) {
-                    return SetDllDirectory(gnupgpath);
-                }
-                return SetDllDirectory(GNUPG_DIRECTORY);
-            }
-
-            return true; // always "true" for UNIX
-        }
-
         internal static void InitLibgpgme() 
         {
             try
             {
-
-                // TODO Does this violate only setting resolver for my own assembly? Should we move to Native.Shared
-                NativeLibrary.SetDllImportResolver(Assembly.GetAssembly(typeof(NativeMethods)), DllImportResolver);
-
                 NativeMethods = GPGME.Native.Shared.NativeMethods.CreateWrapper();
                 
                 // TODO: This should try Win32.NativeMethods and Unix.NativeMethods and use the one
@@ -139,25 +103,11 @@ namespace Libgpgme.Interop
             return gpgme_version_str;
         }
 
-        private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            if (libraryName.Equals(GPGME.Native.Shared.NativeMethods.LIBRARY_NAME,
-                    StringComparison.InvariantCultureIgnoreCase))
-            {
-                return IsWindows 
-                    ? NativeLibrary.Load("C:\\Program Files (x86)\\GnuPG\\bin\\libgpgme-11.dll", assembly, searchPath)
-                    : NativeLibrary.Load("libgpgme.so.11", assembly, searchPath);
-            }
-            
-            return IntPtr.Zero;
-        }
-
         private static bool IsWindowsImpl()
         {
             // IntPtr.Size == 4 on 32-bit systems and 8 on 64-bit systems
              return Environment.OSVersion.Platform.ToString().Contains("Win32") ||
                      Environment.OSVersion.Platform.ToString().Contains("Win64");           
         }
-        
     }
 }
