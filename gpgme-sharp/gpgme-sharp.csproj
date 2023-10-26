@@ -14,6 +14,7 @@
     <PackageReleaseNotes>Update to support .NET Standard 2.0</PackageReleaseNotes>
     <PackageLicenseUrl>https://d.sb/gpgme#license</PackageLicenseUrl>
     <PackageProjectUrl>https://d.sb/gpgme</PackageProjectUrl>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">

@@ -3,7 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6</TargetFramework>
-    <PlatformTarget>x86</PlatformTarget>
+        <PlatformTarget>x86</PlatformTarget>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
