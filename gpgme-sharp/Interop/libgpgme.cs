@@ -15,7 +15,9 @@ namespace Libgpgme.Interop
         internal static bool USE_LFS_ON_UNIX = true;
 
         internal static bool use_lfs;
-        internal static bool IsWindows;
+        
+        private static bool? _isWindows;
+        internal static bool IsWindows => _isWindows ?? (_isWindows = IsWindowsImpl()).Value;
         internal static string gpgme_version_str;
         internal static GpgmeVersion gpgme_version;
 
@@ -52,11 +54,11 @@ namespace Libgpgme.Interop
 
 
         internal static bool Win32SetLibdir() {
-            if (Environment.OSVersion.Platform.ToString().Contains("Win32") ||
-                Environment.OSVersion.Platform.ToString().Contains("Win64")) {
-                IsWindows = true;
+            if (IsWindows) {
                 string gnupgpath = null;
                 try {
+                    // TODO Why can't I find this in regedit?
+                    // TODO Should this be configurable by environment variables?
                     gnupgpath = (string) Registry.GetValue(
 						"HKEY_LOCAL_MACHINE\\SOFTWARE\\GNU\\GnuPG",
                         "Install Directory",
@@ -84,8 +86,6 @@ namespace Libgpgme.Interop
                 
                 // TODO: This should try Win32.NativeMethods and Unix.NativeMethods and use the one
                 // that works, rather than inferring the right one to use based on Platform string.
-                IsWindows = Environment.OSVersion.Platform.ToString().Contains("Win32") ||
-                            Environment.OSVersion.Platform.ToString().Contains("Win64");
                 if (!IsWindows) {
                     if (USE_LFS_ON_UNIX) {
                         // See GPGME manual: 2.3 Largefile Support (LFS)
@@ -145,11 +145,18 @@ namespace Libgpgme.Interop
                     StringComparison.InvariantCultureIgnoreCase))
             {
                 return IsWindows 
-                    ? NativeLibrary.Load("libgpgme-11.dll", assembly, searchPath)
+                    ? NativeLibrary.Load("C:\\Program Files (x86)\\GnuPG\\bin\\libgpgme-11.dll", assembly, searchPath)
                     : NativeLibrary.Load("libgpgme.so.11", assembly, searchPath);
             }
             
             return IntPtr.Zero;
+        }
+
+        private static bool IsWindowsImpl()
+        {
+            // IntPtr.Size == 4 on 32-bit systems and 8 on 64-bit systems
+             return Environment.OSVersion.Platform.ToString().Contains("Win32") ||
+                     Environment.OSVersion.Platform.ToString().Contains("Win64");           
         }
         
     }
